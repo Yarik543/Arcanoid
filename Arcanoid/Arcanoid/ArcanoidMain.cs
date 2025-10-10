@@ -79,20 +79,29 @@ namespace Arcanoid
 
         private Block[] CreateBlocks()
         {
-            // Цвета линий
+            // Цвета строк
             Color[] colors = { Color.Red, Color.Orange, Color.Yellow, Color.Green };
-            int cols = 8, rows = colors.Length;
-            Block[] arr = new Block[cols * rows];
-            int index = 0;
 
+            int rows = colors.Length;
+            int cols = 10; // сколько блоков в ряду
+            int total = rows * cols;
+            Block[] arr = new Block[total];
+
+            // ширина блока = ширина окна / кол-во столбцов
+            int blockWidth = this.ClientSize.Width / cols;
+            int blockHeight = 25;
+
+            int index = 0;
             for (int y = 0; y < rows; y++)
             {
                 for (int x = 0; x < cols; x++)
                 {
                     arr[index++] = new Block(
-                        80 + x * 80,
-                        50 + y * 30,
-                        colors[y]
+                        x * blockWidth,
+                        50 + y * blockHeight,
+                        colors[y],
+                        blockWidth,
+                        blockHeight
                     );
                 }
             }

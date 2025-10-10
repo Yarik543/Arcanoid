@@ -8,9 +8,10 @@ namespace Arcanoid
         public bool IsAlive = true;
         private Color color;
 
-        public Block(int x, int y, Color c)
+        // добавили width и height
+        public Block(int x, int y, Color c, int width, int height)
         {
-            rect = new Rectangle(x, y, 70, 20);
+            rect = new Rectangle(x, y, width, height);
             color = c;
         }
 

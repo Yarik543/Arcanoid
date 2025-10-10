@@ -63,7 +63,7 @@ namespace Arcanoid
 
         public void Draw(Graphics g)
         {
-            g.FillEllipse(Brushes.Red, rect);
+            g.FillEllipse(Brushes.White, rect);
         }
     }
 }
