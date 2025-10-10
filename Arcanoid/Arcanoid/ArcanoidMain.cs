@@ -1,143 +1,113 @@
-﻿namespace Arcanoid
+﻿using System.Reflection.Metadata;
+
+namespace Arcanoid
 {
     public partial class ArcanoidMain : Form
     {
 
         private System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
-        Block[,] blocks;
+        Paddle paddle;
         Ball ball;
-        Rectangle paddle;
-        int rows = 5, cols = 10;
-        int blockW, blockH;
-        Random rnd = new Random();
+        Block[] blocks;
+
         public ArcanoidMain()
         {
             InitializeComponent();
-            DoubleBuffered = true;
-            ClientSize = new Size(800, 600);
+            this.DoubleBuffered = true;
+            this.Width = 800;
+            this.Height = 600;
 
-            InitLevel();
-            InitBallAndPaddle();
+            StartGame();
 
-            timer.Interval = 16;
-            timer.Tick += Timer_Tick;
+            timer.Interval = 16; // ~60 FPS
+            timer.Tick += Update;
             timer.Start();
 
-            Paint += Form1_Paint;
-            MouseMove += Form1_MouseMove;
+            this.MouseMove += GameForm_MouseMove;
+            this.MouseDown += GameForm_MouseDown; // клик для запуска
         }
 
-
-        // ==== СОЗДАЁМ УРОВЕНЬ ====
-        void InitLevel()
+        private void StartGame()
         {
-            int margin = 20;
-            int spacing = 5;
-            blockW = (ClientSize.Width - margin * 2 - spacing * (cols - 1)) / cols;
-            blockH = 25;
-            blocks = new Block[rows, cols];
+            paddle = new Paddle(this.ClientSize);
+            ball = new Ball(paddle);
+            blocks = CreateBlocks();
+        }
 
-            for (int r = 0; r < rows; r++)
+        private void GameForm_MouseMove(object sender, MouseEventArgs e)
+        {
+            paddle.MoveToMouse(e.X, this.ClientSize);
+
+            // если мяч ещё не запущен — он двигается вместе с платформой
+            if (!ball.IsLaunched)
+                ball.FollowPaddle(paddle);
+        }
+
+        private void GameForm_MouseDown(object sender, MouseEventArgs e)
+        {
+            // по клику запускаем мяч
+            ball.IsLaunched = true;
+        }
+
+        private void Update(object sender, EventArgs e)
+        {
+            if (ball.IsLaunched)
+                ball.Move(this.ClientSize, paddle, blocks);
+
+            bool allBroken = true;
+            foreach (var b in blocks)
+                if (b.IsAlive) { allBroken = false; break; }
+
+            if (ball.IsLost)
             {
-                for (int c = 0; c < cols; c++)
+                timer.Stop();
+                MessageBox.Show("Вы проиграли!", "Арканоид");
+                StartGame();
+                timer.Start();
+            }
+
+            if (allBroken)
+            {
+                timer.Stop();
+                MessageBox.Show("Вы выиграли!", "Арканоид");
+                StartGame();
+                timer.Start();
+            }
+
+            Invalidate(); // перерисовать форму
+        }
+
+        private Block[] CreateBlocks()
+        {
+            // Цвета линий
+            Color[] colors = { Color.Red, Color.Orange, Color.Yellow, Color.Green };
+            int cols = 8, rows = colors.Length;
+            Block[] arr = new Block[cols * rows];
+            int index = 0;
+
+            for (int y = 0; y < rows; y++)
+            {
+                for (int x = 0; x < cols; x++)
                 {
-                    int x = margin + c * (blockW + spacing);
-                    int y = margin + r * (blockH + spacing);
-                    Color color = Color.FromArgb(rnd.Next(100, 256), rnd.Next(100, 256), rnd.Next(100, 256));
-                    blocks[r, c] = new Block(new Rectangle(x, y, blockW, blockH), color);
+                    arr[index++] = new Block(
+                        80 + x * 80,
+                        50 + y * 30,
+                        colors[y]
+                    );
                 }
             }
+            return arr;
         }
 
-        void InitBallAndPaddle()
+        protected override void OnPaint(PaintEventArgs e)
         {
-            paddle = new Rectangle(ClientSize.Width / 2 - 50, ClientSize.Height - 50, 100, 12);
-            ball = new Ball(ClientSize.Width / 2, paddle.Y - 20, 3, -4);
-        }
-
-        // ==== УПРАВЛЕНИЕ ====
-        private void Form1_MouseMove(object sender, MouseEventArgs e)
-        {
-            int newX = e.X - paddle.Width / 2;
-
-            // Проверка границ
-            if (newX < 0) newX = 0;
-            if (newX + paddle.Width > ClientSize.Width) newX = ClientSize.Width - paddle.Width;
-
-            paddle.X = newX;
-        }
-
-        // ==== ГЛАВНЫЙ ЦИКЛ ====
-        private void Timer_Tick(object sender, EventArgs e)
-        {
-            ball.X += ball.VX;
-            ball.Y += ball.VY;
-
-            // Стенки
-            if (ball.X - ball.R < 0) { ball.X = ball.R; ball.VX = -ball.VX; }
-            if (ball.X + ball.R > ClientSize.Width) { ball.X = ClientSize.Width - ball.R; ball.VX = -ball.VX; }
-            if (ball.Y - ball.R < 0) { ball.Y = ball.R; ball.VY = -ball.VY; }
-
-            // Платформа
-            RectangleF ballRect = new RectangleF(ball.X - ball.R, ball.Y - ball.R, ball.R * 2, ball.R * 2);
-            if (ballRect.IntersectsWith(paddle))
-            {
-                ball.VY = -Math.Abs(ball.VY);
-            }
-
-            // Блоки
-            for (int r = 0; r < rows; r++)
-            {
-                for (int c = 0; c < cols; c++)
-                {
-                    var b = blocks[r, c];
-                    if (b == null || !b.Alive) continue;
-
-                    if (ballRect.IntersectsWith(b.Rect))
-                    {
-                        b.Alive = false;
-                        ball.VY = -ball.VY;
-                        goto AfterBlocks;
-                    }
-                }
-            }
-
-        AfterBlocks:
-
-            // Мяч упал вниз — рестарт
-            if (ball.Y > ClientSize.Height)
-            {
-                InitBallAndPaddle();
-            }
-
-            Invalidate();
-        }
-
-        // ==== ОТРИСОВКА ====
-        private void Form1_Paint(object sender, PaintEventArgs e)
-        {
+            base.OnPaint(e);
             Graphics g = e.Graphics;
 
-            // Блоки
-            for (int r = 0; r < rows; r++)
-            {
-                for (int c = 0; c < cols; c++)
-                {
-                    var b = blocks[r, c];
-                    if (b != null && b.Alive)
-                    {
-                        using (Brush br = new SolidBrush(b.Color))
-                            g.FillRectangle(br, b.Rect);
-
-                    }
-                }
-            }
-
-            // Платформа
-            g.FillRectangle(Brushes.DodgerBlue, paddle);
-
-            // Мяч
-            g.FillEllipse(Brushes.Red, ball.X - ball.R, ball.Y - ball.R, ball.R * 2, ball.R * 2);
+            paddle.Draw(g);
+            ball.Draw(g);
+            foreach (var b in blocks)
+                if (b.IsAlive) b.Draw(g);
         }
     }
 }

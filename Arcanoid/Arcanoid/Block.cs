@@ -4,14 +4,21 @@ namespace Arcanoid
 {
     public class Block
     {
-        public Rectangle Rect;
-        public bool Alive = true;
-        public Color Color;
+        public Rectangle rect;
+        public bool IsAlive = true;
+        private Color color;
 
-        public Block(Rectangle rect, Color color)
+        public Block(int x, int y, Color c)
         {
-            Rect = rect;
-            Color = color;
+            rect = new Rectangle(x, y, 70, 20);
+            color = c;
+        }
+
+        public void Draw(Graphics g)
+        {
+            using (Brush br = new SolidBrush(color))
+                g.FillRectangle(br, rect);
+            g.DrawRectangle(Pens.Black, rect);
         }
     }
 }
