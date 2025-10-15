@@ -5,8 +5,11 @@ namespace Arcanoid
     public class Ball
     {
         public Rectangle rect;
-        private int dx = 6, dy = -6;
+        private int dx = 6;
+        private int dy = -6;
+
         public bool IsLost { get; private set; }
+
         public bool IsLaunched { get; set; }
 
         public Ball(Paddle paddle)

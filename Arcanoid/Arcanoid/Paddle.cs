@@ -5,6 +5,7 @@ namespace Arcanoid
     public class Paddle
     {
         public Rectangle rect;
+
         public Paddle(Size clientSize)
         {
             rect = new Rectangle(clientSize.Width / 2 - 50, clientSize.Height - 40, 100, 15);
