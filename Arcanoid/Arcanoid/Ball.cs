@@ -8,12 +8,14 @@ namespace Arcanoid
         private int dx = 6;
         private int dy = -6;
 
-        public bool IsLost { get; private set; }
-
         public bool IsLaunched { get; set; }
+        public bool IsLost => rect.Bottom > _clientSize.Height;
 
-        public Ball(Paddle paddle)
+        private Size _clientSize;
+
+        public Ball(Paddle paddle, Size clientSize)
         {
+            _clientSize = clientSize;
             rect = new Rectangle(0, 0, 16, 16);
             FollowPaddle(paddle);
         }
@@ -24,35 +26,28 @@ namespace Arcanoid
             rect.Y = paddle.rect.Y - rect.Height;
         }
 
-        public void Move(Size clientSize, Paddle paddle, Block[] blocks)
+        public void Move(Paddle paddle, Block[] blocks)
         {
+            if (!IsLaunched) return;
+
             rect.X += dx;
             rect.Y += dy;
 
-            // столкновение со стенками
-            if (rect.Left < 0 || rect.Right > clientSize.Width) dx = -dx;
+            // стенки
+            if (rect.Left < 0 || rect.Right > _clientSize.Width) dx = -dx;
             if (rect.Top < 0) dy = -dy;
 
-            // мяч улетел вниз
-            if (rect.Bottom > clientSize.Height)
-            {
-                IsLost = true;
-                IsLaunched = false;
-                return;
-            }
-
-            // от платформы
+            // платформа
             if (rect.IntersectsWith(paddle.rect))
             {
                 dy = -dy;
 
-                // изменение направления от точки касания
                 int hitPoint = rect.X + rect.Width / 2 - paddle.rect.X;
                 if (hitPoint < paddle.rect.Width / 3) dx = -Math.Abs(dx);
                 else if (hitPoint > paddle.rect.Width * 2 / 3) dx = Math.Abs(dx);
             }
 
-            // от блоков
+            // блоки
             foreach (var b in blocks)
             {
                 if (b.IsAlive && rect.IntersectsWith(b.rect))
@@ -62,11 +57,6 @@ namespace Arcanoid
                     break;
                 }
             }
-        }
-
-        public void Draw(Graphics g)
-        {
-            g.FillEllipse(Brushes.White, rect);
         }
     }
 }

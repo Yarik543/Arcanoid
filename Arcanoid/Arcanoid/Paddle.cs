@@ -16,15 +16,9 @@ namespace Arcanoid
             int half = rect.Width / 2;
             rect.X = mouseX - half;
 
-            // чтобы не выходила за границы
             if (rect.X < 0) rect.X = 0;
             if (rect.X + rect.Width > clientSize.Width)
                 rect.X = clientSize.Width - rect.Width;
-        }
-
-        public void Draw(Graphics g)
-        {
-            g.FillRectangle(Brushes.Blue, rect);
         }
     }
 }
