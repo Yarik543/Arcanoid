@@ -6,34 +6,124 @@ namespace Arcanoid
     {
 
         private System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
-        Paddle paddle;
-        Ball ball;
-        Block[] blocks;
+        private Paddle paddle;
+        private Ball ball;
+        private Block[] blocks;
+
+        // создаем кисть в память
+        private Brush paddleBrush = Brushes.Blue;
+        private Brush ballBrush = Brushes.White;
+        private Pen blockBorderPen = Pens.Black;
+
+        // кеш кистей для цветов блоков 
+        private Dictionary<Color, Brush> blockBrushes = new Dictionary<Color, Brush>();
 
         public ArcanoidMain()
         {
             InitializeComponent();
-            this.DoubleBuffered = true;
+            DoubleBuffered = true;
             this.Width = 800;
             this.Height = 600;
 
             StartGame();
 
-            timer.Interval = 16; // ~60 FPS
+            timer.Interval = 16;
             timer.Tick += Update;
             timer.Start();
 
             this.MouseMove += GameForm_MouseMove;
-            this.MouseDown += GameForm_MouseDown; // клик для запуска
+            this.MouseDown += GameForm_MouseDown;
+
+            // Подписываемся на событие Paint
+            this.Paint += GameDraw;
+        }
+
+        // после создания блоков наполним кеш кистей (в StartGame или сразу после CreateBlocks)
+        private void EnsureBlockBrushes()
+        {
+            blockBrushes.Clear();
+            foreach (var b in blocks)
+            {
+                if (!blockBrushes.ContainsKey(b.Color))
+                    blockBrushes[b.Color] = new SolidBrush(b.Color);
+            }
+        }
+
+        private void GameDraw(object? sender, PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+
+            // отрисовка платформы
+            g.FillRectangle(paddleBrush, paddle.rect);
+            g.DrawRectangle(Pens.Black, paddle.rect);
+
+            // отрисовка мяча
+            g.FillEllipse(ballBrush, ball.rect);
+            g.DrawEllipse(Pens.Black, ball.rect);
+
+            // отрисовка блоков (используем кешированные кисти)
+            foreach (var b in blocks)
+            {
+                if (!b.IsAlive) continue;
+
+                if (blockBrushes.TryGetValue(b.Color, out Brush br))
+                {
+                    g.FillRectangle(br, b.rect);
+                }
+                else
+                {
+                    // на случай, если кисти нет — создаём временно (хотя это не должно случаться)
+                    using (var tmp = new SolidBrush(b.Color))
+                        g.FillRectangle(tmp, b.rect);
+                }
+
+                g.DrawRectangle(blockBorderPen, b.rect);
+            }
         }
 
         private void StartGame()
         {
             paddle = new Paddle(this.ClientSize);
-            ball = new Ball(paddle);
+            ball = new Ball(paddle, this.ClientSize);
             blocks = CreateBlocks();
+            EnsureBlockBrushes(); // <- добавь сюда
         }
 
+        private void ResetGame()
+        {
+            StartGame();
+            Invalidate(); // сразу перерисовываем
+        }
+
+        private void Update(object? sender, EventArgs e)
+        {
+            if (ball.IsLaunched)
+                ball.Move(paddle, blocks);
+
+            // Проверка поражения
+            if (ball.IsLost)
+            {
+                timer.Stop();
+                MessageBox.Show("Вы проиграли!", "Арканоид");
+                ResetGame();
+                timer.Start();
+                return;
+            }
+            // Проверка победы
+            bool allBroken = true;
+            foreach (var b in blocks)
+                if (b.IsAlive) { allBroken = false; break; }
+
+            if (allBroken)
+            {
+                timer.Stop();
+                MessageBox.Show("Вы выиграли!", "Арканоид");
+                ResetGame();
+                timer.Start();
+                return;
+            }
+            Invalidate(); // перерисовка
+        }
         private void GameForm_MouseMove(object sender, MouseEventArgs e)
         {
             paddle.MoveToMouse(e.X, this.ClientSize);
@@ -49,33 +139,6 @@ namespace Arcanoid
             ball.IsLaunched = true;
         }
 
-        private void Update(object sender, EventArgs e)
-        {
-            if (ball.IsLaunched)
-                ball.Move(this.ClientSize, paddle, blocks);
-
-            bool allBroken = true;
-            foreach (var b in blocks)
-                if (b.IsAlive) { allBroken = false; break; }
-
-            if (ball.IsLost)
-            {
-                timer.Stop();
-                MessageBox.Show("Вы проиграли!", "Арканоид");
-                StartGame();
-                timer.Start();
-            }
-
-            if (allBroken)
-            {
-                timer.Stop();
-                MessageBox.Show("Вы выиграли!", "Арканоид");
-                StartGame();
-                timer.Start();
-            }
-
-            Invalidate(); // перерисовать форму
-        }
 
         private Block[] CreateBlocks()
         {
@@ -108,15 +171,13 @@ namespace Arcanoid
             return arr;
         }
 
-        protected override void OnPaint(PaintEventArgs e)
+        protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            base.OnPaint(e);
-            Graphics g = e.Graphics;
-
-            paddle.Draw(g);
-            ball.Draw(g);
-            foreach (var b in blocks)
-                if (b.IsAlive) b.Draw(g);
+            base.OnFormClosing(e);
+            foreach (var kv in blockBrushes)
+            {
+                if (kv.Value is IDisposable d) d.Dispose();
+            }
         }
     }
 }

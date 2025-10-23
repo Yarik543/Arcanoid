@@ -47,13 +47,26 @@ namespace Arcanoid
                 else if (hitPoint > paddle.rect.Width * 2 / 3) dx = Math.Abs(dx);
             }
 
-            // блоки
+            // от блоков
             foreach (var b in blocks)
             {
                 if (b.IsAlive && rect.IntersectsWith(b.rect))
                 {
+                    // вычисляем, с какой стороны удар
+                    Rectangle intersection = Rectangle.Intersect(rect, b.rect);
+
+                    if (intersection.Width > intersection.Height)
+                    {
+                        // удар сверху/снизу
+                        dy = -dy;
+                    }
+                    else
+                    {
+                        // удар слева/справа
+                        dx = -dx;
+                    }
+
                     b.IsAlive = false;
-                    dy = -dy;
                     break;
                 }
             }
