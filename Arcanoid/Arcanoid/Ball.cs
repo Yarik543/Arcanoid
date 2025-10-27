@@ -5,7 +5,9 @@ namespace Arcanoid
     public class Ball
     {
         public Rectangle rect;
+
         private int dx = 6;
+
         private int dy = -6;
 
         public bool IsLaunched { get; set; }
@@ -34,17 +36,32 @@ namespace Arcanoid
             rect.Y += dy;
 
             // стенки
-            if (rect.Left < 0 || rect.Right > _clientSize.Width) dx = -dx;
-            if (rect.Top < 0) dy = -dy;
+            if (rect.Left < 0 || rect.Right > _clientSize.Width)
+            {
+                dx = -dx;
+            }
+
+            if (rect.Top < 0)
+            {
+                dy = -dy;
+            }
 
             // платформа
             if (rect.IntersectsWith(paddle.rect))
             {
                 dy = -dy;
 
-                int hitPoint = rect.X + rect.Width / 2 - paddle.rect.X;
-                if (hitPoint < paddle.rect.Width / 3) dx = -Math.Abs(dx);
-                else if (hitPoint > paddle.rect.Width * 2 / 3) dx = Math.Abs(dx);
+                var hitPoint = rect.X + rect.Width / 2 - paddle.rect.X;
+                if (hitPoint < paddle.rect.Width / 3)
+                {
+                    dx = -Math.Abs(dx);
+                }
+
+                else if (hitPoint > paddle.rect.Width * 2 / 3)
+                {
+                    dx = Math.Abs(dx);
+                }
+
             }
 
             // от блоков

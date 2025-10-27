@@ -6,8 +6,11 @@ namespace Arcanoid
     {
 
         private System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
+
         private Paddle paddle;
+
         private Ball ball;
+
         private Block[] blocks;
 
         // создаем кисть в память
@@ -45,7 +48,9 @@ namespace Arcanoid
             foreach (var b in blocks)
             {
                 if (!blockBrushes.ContainsKey(b.Color))
+                {
                     blockBrushes[b.Color] = new SolidBrush(b.Color);
+                }
             }
         }
 
@@ -64,17 +69,14 @@ namespace Arcanoid
             // отрисовка блоков (используем кешированные кисти)
             foreach (var b in blocks)
             {
-                if (!b.IsAlive) continue;
+                if (!b.IsAlive)
+                {
+                    continue;
+                }
 
                 if (blockBrushes.TryGetValue(b.Color, out Brush br))
                 {
                     g.FillRectangle(br, b.rect);
-                }
-                else
-                {
-                    // на случай, если кисти нет — создаём временно (хотя это не должно случаться)
-                    using (var tmp = new SolidBrush(b.Color))
-                        g.FillRectangle(tmp, b.rect);
                 }
 
                 g.DrawRectangle(blockBorderPen, b.rect);
@@ -98,7 +100,9 @@ namespace Arcanoid
         private void Update(object? sender, EventArgs e)
         {
             if (ball.IsLaunched)
+            {
                 ball.Move(paddle, blocks);
+            }
 
             // Проверка поражения
             if (ball.IsLost)
@@ -112,7 +116,13 @@ namespace Arcanoid
             // Проверка победы
             bool allBroken = true;
             foreach (var b in blocks)
-                if (b.IsAlive) { allBroken = false; break; }
+            {
+                if (b.IsAlive)
+                {
+                    allBroken = false;
+                    break;
+                }
+            }
 
             if (allBroken)
             {
@@ -130,7 +140,9 @@ namespace Arcanoid
 
             // если мяч ещё не запущен — он двигается вместе с платформой
             if (!ball.IsLaunched)
+            {
                 ball.FollowPaddle(paddle);
+            }
         }
 
         private void GameForm_MouseDown(object sender, MouseEventArgs e)
@@ -151,8 +163,8 @@ namespace Arcanoid
             Block[] arr = new Block[total];
 
             // ширина блока = ширина окна / кол-во столбцов
-            int blockWidth = this.ClientSize.Width / cols;
-            int blockHeight = 25;
+            var blockWidth = this.ClientSize.Width / cols;
+            var blockHeight = 25;
 
             var index = 0;
             for (var y = 0; y < rows; y++)
@@ -171,13 +183,5 @@ namespace Arcanoid
             return arr;
         }
 
-        protected override void OnFormClosing(FormClosingEventArgs e)
-        {
-            base.OnFormClosing(e);
-            foreach (var kv in blockBrushes)
-            {
-                if (kv.Value is IDisposable d) d.Dispose();
-            }
-        }
     }
 }
