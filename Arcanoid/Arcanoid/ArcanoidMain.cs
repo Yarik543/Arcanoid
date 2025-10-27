@@ -101,11 +101,61 @@ namespace Arcanoid
         {
             if (ball.IsLaunched)
             {
-                ball.Move(paddle, blocks);
+                // движение
+                ball.rect.X += ball.dx;
+                ball.rect.Y += ball.dy;
+
+                // стены
+                if (ball.rect.Left < 0 || ball.rect.Right > this.ClientSize.Width)
+                {
+                    ball.dx = -ball.dx;
+                }
+
+                if (ball.rect.Top < 0)
+                {
+                    ball.dy = -ball.dy;
+                }
+
+                // платформа
+                if (ball.rect.IntersectsWith(paddle.rect))
+                {
+                    ball.dy = -ball.dy;
+
+                    var hitPoint = ball.rect.X + ball.rect.Width / 2 - paddle.rect.X;
+                    if (hitPoint < paddle.rect.Width / 3)
+                    {
+                        ball.dx = -Math.Abs(ball.dx);
+                    }
+                    else if (hitPoint > paddle.rect.Width * 2 / 3)
+                    {
+                        ball.dx = Math.Abs(ball.dx);
+                    }
+                }
+
+                // блоки
+                foreach (var b in blocks)
+                {
+                    if (b.IsAlive && ball.rect.IntersectsWith(b.rect))
+                    {
+                        var intersection = Rectangle.Intersect(ball.rect, b.rect);
+
+                        if (intersection.Width > intersection.Height)
+                        {
+                            ball.dy = -ball.dy;
+                        }
+                        else
+                        {
+                            ball.dx = -ball.dx;
+                        }
+
+                        b.IsAlive = false;
+                        break;
+                    }
+                }
             }
 
-            // Проверка поражения
-            if (ball.IsLost)
+            // поражение
+            if (ball.rect.Bottom > this.ClientSize.Height)
             {
                 timer.Stop();
                 MessageBox.Show("Вы проиграли!", "Арканоид");
@@ -113,8 +163,9 @@ namespace Arcanoid
                 timer.Start();
                 return;
             }
-            // Проверка победы
-            bool allBroken = true;
+
+            // победа
+            var allBroken = true;
             foreach (var b in blocks)
             {
                 if (b.IsAlive)
@@ -132,7 +183,8 @@ namespace Arcanoid
                 timer.Start();
                 return;
             }
-            Invalidate(); // перерисовка
+
+            Invalidate();
         }
         private void GameForm_MouseMove(object sender, MouseEventArgs e)
         {
