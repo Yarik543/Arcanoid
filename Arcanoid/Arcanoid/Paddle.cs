@@ -13,12 +13,18 @@ namespace Arcanoid
 
         public void MoveToMouse(int mouseX, Size clientSize)
         {
-            int half = rect.Width / 2;
+            var half = rect.Width / 2;
             rect.X = mouseX - half;
 
-            if (rect.X < 0) rect.X = 0;
+            if (rect.X < 0)
+            {
+                rect.X = 0;
+            }
+
             if (rect.X + rect.Width > clientSize.Width)
+            {
                 rect.X = clientSize.Width - rect.Width;
+            }
         }
     }
 }

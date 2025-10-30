@@ -207,12 +207,12 @@ namespace Arcanoid
         private Block[] CreateBlocks()
         {
             // Цвета строк
-            Color[] colors = { Color.Red, Color.Orange, Color.Yellow, Color.Green };
+            var colors = new[] { Color.Red, Color.Orange, Color.Yellow, Color.Green };
 
             var rows = colors.Length;
             var cols = 10; // сколько блоков в ряду
             var total = rows * cols;
-            Block[] arr = new Block[total];
+            var arr = new Block[total];
 
             // ширина блока = ширина окна / кол-во столбцов
             var blockWidth = this.ClientSize.Width / cols;

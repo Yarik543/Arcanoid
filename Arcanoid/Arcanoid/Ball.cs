@@ -6,9 +6,9 @@ namespace Arcanoid
     {
         public Rectangle rect;
 
-        public int dx = 6;
+        public int dx = 12;
 
-        public int dy = -6;
+        public int dy = -12;
 
         public bool IsLaunched { get; set; }
         public bool IsLost => rect.Bottom > _clientSize.Height;
