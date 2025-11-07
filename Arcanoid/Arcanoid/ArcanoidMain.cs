@@ -5,28 +5,26 @@ namespace Arcanoid
     public partial class ArcanoidMain : Form
     {
 
-        private System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
-
+        private readonly System.Windows.Forms.Timer timer = new();
         private Paddle paddle;
-
         private Ball ball;
-
         private Block[] blocks;
 
-        // создаем кисть в память
-        private Brush paddleBrush = Brushes.Blue;
-        private Brush ballBrush = Brushes.White;
-        private Pen blockBorderPen = Pens.Black;
+        // кисти и ручки
+        private readonly Brush paddleBrush = Brushes.Blue;
+        private readonly Brush ballBrush = Brushes.White;
+        private readonly Pen blockBorderPen = Pens.Black;
 
-        // кеш кистей для цветов блоков 
-        private Dictionary<Color, Brush> blockBrushes = new Dictionary<Color, Brush>();
+        // кеш кистей для блоков
+        private readonly Dictionary<Color, Brush> blockBrushes = new();
+
 
         public ArcanoidMain()
         {
             InitializeComponent();
             DoubleBuffered = true;
-            this.Width = 800;
-            this.Height = 600;
+            Width = 800;
+            Height = 600;
 
             StartGame();
 
@@ -34,11 +32,9 @@ namespace Arcanoid
             timer.Tick += Update;
             timer.Start();
 
-            this.MouseMove += GameForm_MouseMove;
-            this.MouseDown += GameForm_MouseDown;
-
-            // Подписываемся на событие Paint
-            this.Paint += GameDraw;
+            MouseMove += GameForm_MouseMove;
+            MouseDown += GameForm_MouseDown;
+            Paint += GameDraw;
         }
 
         // после создания блоков наполним кеш кистей (в StartGame или сразу после CreateBlocks)
@@ -56,30 +52,27 @@ namespace Arcanoid
 
         private void GameDraw(object? sender, PaintEventArgs e)
         {
-            Graphics g = e.Graphics;
+            var g = e.Graphics;
 
-            // отрисовка платформы
-            g.FillRectangle(paddleBrush, paddle.rect);
-            g.DrawRectangle(Pens.Black, paddle.rect);
+            // платформа
+            g.FillRectangle(paddleBrush, paddle.Rect);
+            g.DrawRectangle(Pens.Black, paddle.Rect);
 
-            // отрисовка мяча
-            g.FillEllipse(ballBrush, ball.rect);
-            g.DrawEllipse(Pens.Black, ball.rect);
+            // мяч
+            g.FillEllipse(ballBrush, ball.Rect);
+            g.DrawEllipse(Pens.Black, ball.Rect);
 
-            // отрисовка блоков (используем кешированные кисти)
+            // блоки
             foreach (var b in blocks)
             {
-                if (!b.IsAlive)
+                if (!b.IsAlive) continue;
+
+                if (blockBrushes.TryGetValue(b.Color, out var br))
                 {
-                    continue;
+                    g.FillRectangle(br, b.Rect);
                 }
 
-                if (blockBrushes.TryGetValue(b.Color, out Brush br))
-                {
-                    g.FillRectangle(br, b.rect);
-                }
-
-                g.DrawRectangle(blockBorderPen, b.rect);
+                g.DrawRectangle(blockBorderPen, b.Rect);
             }
         }
 
@@ -88,7 +81,7 @@ namespace Arcanoid
             paddle = new Paddle(this.ClientSize);
             ball = new Ball(paddle, this.ClientSize);
             blocks = CreateBlocks();
-            EnsureBlockBrushes(); // <- добавь сюда
+            EnsureBlockBrushes(); 
         }
 
         private void ResetGame()
@@ -102,50 +95,54 @@ namespace Arcanoid
             if (ball.IsLaunched)
             {
                 // движение
-                ball.rect.X += ball.dx;
-                ball.rect.Y += ball.dy;
+                ball.Rect = new Rectangle(
+                    ball.Rect.X + ball.Dx,
+                    ball.Rect.Y + ball.Dy,
+                    ball.Rect.Width,
+                    ball.Rect.Height
+                );
 
                 // стены
-                if (ball.rect.Left < 0 || ball.rect.Right > this.ClientSize.Width)
+                if (ball.Rect.Left < 0 || ball.Rect.Right > ClientSize.Width)
                 {
-                    ball.dx = -ball.dx;
+                    ball.Dx = -ball.Dx;
                 }
 
-                if (ball.rect.Top < 0)
+                if (ball.Rect.Top < 0)
                 {
-                    ball.dy = -ball.dy;
+                    ball.Dy = -ball.Dy;
                 }
 
                 // платформа
-                if (ball.rect.IntersectsWith(paddle.rect))
+                if (ball.Rect.IntersectsWith(paddle.Rect))
                 {
-                    ball.dy = -ball.dy;
+                    ball.Dy = -ball.Dy;
 
-                    var hitPoint = ball.rect.X + ball.rect.Width / 2 - paddle.rect.X;
-                    if (hitPoint < paddle.rect.Width / 3)
+                    var hitPoint = ball.Rect.X + ball.Rect.Width / 2 - paddle.Rect.X;
+                    if (hitPoint < paddle.Rect.Width / 3)
                     {
-                        ball.dx = -Math.Abs(ball.dx);
+                        ball.Dx = -Math.Abs(ball.Dx);
                     }
-                    else if (hitPoint > paddle.rect.Width * 2 / 3)
+                    else if (hitPoint > paddle.Rect.Width * 2 / 3)
                     {
-                        ball.dx = Math.Abs(ball.dx);
+                        ball.Dx = Math.Abs(ball.Dx);
                     }
                 }
 
                 // блоки
                 foreach (var b in blocks)
                 {
-                    if (b.IsAlive && ball.rect.IntersectsWith(b.rect))
+                    if (b.IsAlive && ball.Rect.IntersectsWith(b.Rect))
                     {
-                        var intersection = Rectangle.Intersect(ball.rect, b.rect);
+                        var intersection = Rectangle.Intersect(ball.Rect, b.Rect);
 
                         if (intersection.Width > intersection.Height)
                         {
-                            ball.dy = -ball.dy;
+                            ball.Dy = -ball.Dy;
                         }
                         else
                         {
-                            ball.dx = -ball.dx;
+                            ball.Dx = -ball.Dx;
                         }
 
                         b.IsAlive = false;
@@ -155,7 +152,7 @@ namespace Arcanoid
             }
 
             // поражение
-            if (ball.rect.Bottom > this.ClientSize.Height)
+            if (ball.Rect.Bottom > ClientSize.Height)
             {
                 timer.Stop();
                 MessageBox.Show("Вы проиграли!", "Арканоид");

@@ -4,13 +4,13 @@ namespace Arcanoid
 {
     public class Block
     {
-        public Rectangle rect;
-        public bool IsAlive = true;
-        public Color Color { get; private set; }
+        public Rectangle Rect { get; private set; }
+        public bool IsAlive { get; set; } = true;
+        public Color Color { get; }
 
         public Block(int x, int y, Color c, int width, int height)
         {
-            rect = new Rectangle(x, y, width, height);
+            Rect = new Rectangle(x, y, width, height);
             Color = c;
         }
     }
