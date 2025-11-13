@@ -11,9 +11,13 @@ namespace Arcanoid
 
         // свойства
         public Rectangle Rect { get; set; }
+
         public int Dx { get => _dx; set => _dx = value; }
+
         public int Dy { get => _dy; set => _dy = value; }
+
         public bool IsLaunched { get; set; }
+
         public bool IsLost => Rect.Bottom > _clientSize.Height;
 
 
